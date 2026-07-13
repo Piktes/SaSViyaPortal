@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <!--
+      CSP notu: Guvenlik basligi (Content-Security-Policy) uretim build'ine
+      vite.config.js icindeki VIYA_ORIGIN sabiti uzerinden otomatik eklenir.
+      Tercihen CSP'yi web sunucusu header'i olarak verin — ornekler README'de.
+      Dev modunda CSP eklenmez (Vite HMR inline script kullanir).
+    -->
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
+    <title>Viya Rapor Portalı</title>
+    <script async src="/sdk-assets/va-report-components/umd/va-report-components.js"></script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>

@@ -1,0 +1,5 @@
+node_modules
+dist
+public/sdk-assets
+*.local
+.DS_Store

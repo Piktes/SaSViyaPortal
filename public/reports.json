@@ -1,0 +1,11 @@
+{
+  "viyaUrl": "http://localhost:5173",
+  "reports": [
+    {
+      "id": "bys-rapor",
+      "name": "BYS Raporu",
+      "description": "MEB BYS üzerindeki Visual Analytics raporu",
+      "reportUri": "/reports/reports/802253ca-b68a-4fda-acab-dbf9a223eab9"
+    }
+  ]
+}
