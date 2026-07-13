@@ -2,8 +2,9 @@ import { createContext, useContext, useEffect, useState } from "react";
 import { Route, Routes } from "react-router-dom";
 import { loadConfig } from "./config/loadConfig.js";
 import { useViyaAuth } from "./hooks/useViyaAuth.js";
+import { useTheme } from "./hooks/useTheme.js";
 import LoginPage from "./pages/LoginPage.jsx";
-import ReportListPage from "./pages/ReportListPage.jsx";
+import HomePage from "./pages/HomePage.jsx";
 import ReportViewPage from "./pages/ReportViewPage.jsx";
 import NotFoundPage from "./pages/NotFoundPage.jsx";
 
@@ -16,6 +17,7 @@ export function useApp() {
 export default function App() {
   const [config, setConfig] = useState(null);
   const [configError, setConfigError] = useState(null);
+  const theme = useTheme();
 
   useEffect(() => {
     loadConfig()
@@ -51,13 +53,13 @@ export default function App() {
   // Yonlendirme yapilmadigi icin (rota korunur) open-redirect riski yoktur;
   // giris sonrasi kullanici zaten istedigi /report/:id rotasinda kalir.
   if (auth.status !== "authenticated") {
-    return <LoginPage auth={auth} viyaUrl={config.viyaUrl} />;
+    return <LoginPage auth={auth} viyaUrl={config.viyaUrl} theme={theme} />;
   }
 
   return (
-    <AppContext.Provider value={{ config, auth }}>
+    <AppContext.Provider value={{ config, auth, theme }}>
       <Routes>
-        <Route path="/" element={<ReportListPage />} />
+        <Route path="/" element={<HomePage />} />
         <Route path="/report/:id" element={<ReportViewPage />} />
         <Route path="*" element={<NotFoundPage />} />
       </Routes>

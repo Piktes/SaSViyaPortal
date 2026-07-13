@@ -10,7 +10,7 @@ export default function NotFoundPage() {
           yöneticinin tanımladığı listeden açılabilir.
         </p>
         <Link to="/" className="btn btn-primary">
-          Rapor listesine dön
+          Ana sayfaya dön
         </Link>
       </div>
     </div>

@@ -1,7 +1,14 @@
-# Viya Rapor Portalı
+# Bakanlık Yönetim Sistemi — Rapor Portalı
 
-SAS Viya hesabıyla giriş yapan kullanıcılara, **yönetici tarafından tanımlanmış** SAS Visual
-Analytics raporlarını gösteren bağımsız web uygulaması.
+SAS Viya hesabıyla giriş yapan kullanıcılara raporları sunan bağımsız web uygulaması.
+Açık/koyu tema, MEB kurumsal görünümü.
+
+**İki sekme:**
+- **📊 Canlı Raporlar** — yönetici tarafından `reports.json`'da tanımlanan raporlar,
+  thumbnail'li kartlarla listelenir; tıklanınca `<sas-report>` ile canlı açılır.
+- **📄 Rapor Çıktıları** — giriş yapan kullanıcının **Viya'da erişebildiği** raporlar
+  (`GET /reports/reports`) listelenir; her biri için **PDF İndir**
+  (`GET /visualAnalytics/reports/{id}/pdf`, A4 yatay — Viya render bitene dek bekletir).
 
 - Kimlik doğrulama: [`@sassoftware/sas-auth-browser`](https://github.com/sassoftware/sas-viya-sdk-js/tree/main/sdk/sas-auth-browser) (cookie tabanlı, popup ile Viya login)
 - Rapor gömme: [`@sassoftware/va-report-components`](https://github.com/sassoftware/sas-viya-sdk-js/tree/main/sdk/va-report-components) (`<sas-report>`)
