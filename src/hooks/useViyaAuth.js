@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { getSasAuth } from "../auth/sasAuth.js";
+import { passwordLogin } from "../api/viyaApi.js";
 
 // Viya oturum durumu: checking -> authenticated | unauthenticated
 // login(): loginPopup acar; logout(): Viya oturumunu kapatir.
@@ -39,6 +40,25 @@ export function useViyaAuth(viyaUrl) {
     }
   }, [viyaUrl]);
 
+  // Kendi formumuzla giris: SASLogon'a dogrudan kimlik POST edilir, popup acilmaz.
+  const loginWithPassword = useCallback(
+    async (username, password) => {
+      setError(null);
+      try {
+        await passwordLogin(viyaUrl, username, password);
+        const sasAuth = getSasAuth(viyaUrl);
+        sasAuth.invalidateCache();
+        await sasAuth.checkAuthenticated(); // oturumun gercekten kuruldugunu dogrula
+        setStatus("authenticated");
+        return true;
+      } catch (err) {
+        setError(err?.message || "Giriş başarısız.");
+        return false;
+      }
+    },
+    [viyaUrl]
+  );
+
   const logout = useCallback(async () => {
     try {
       await getSasAuth(viyaUrl).logout();
@@ -49,5 +69,5 @@ export function useViyaAuth(viyaUrl) {
     setStatus("unauthenticated");
   }, [viyaUrl]);
 
-  return { status, error, login, logout };
+  return { status, error, login, loginWithPassword, logout };
 }

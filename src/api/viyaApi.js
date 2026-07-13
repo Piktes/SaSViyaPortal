@@ -8,6 +8,59 @@ export function isReportUuid(value) {
   return typeof value === "string" && UUID_RE.test(value);
 }
 
+/**
+ * Kullanici adi + parola ile SASLogon form girisi (popup'siz).
+ *
+ * Akis: login sayfasi GET'lenir (CSRF cerezi + gizli form alanlari),
+ * form application/x-www-form-urlencoded olarak POST edilir, oturum
+ * cerezleri tarayiciya yazilir. Basarisiz giriste SASLogon login sayfasina
+ * "error" parametresiyle geri yonlendirir — bunu yakalayip Turkce hata veririz.
+ */
+export async function passwordLogin(viyaUrl, username, password) {
+  const pageRes = await fetch(`${viyaUrl}/SASLogon/login`, {
+    credentials: "include",
+    headers: { Accept: "text/html" },
+  });
+  if (!pageRes.ok) throw new Error(`Giriş sayfasına ulaşılamadı (HTTP ${pageRes.status}).`);
+  const doc = new DOMParser().parseFromString(await pageRes.text(), "text/html");
+
+  const pwInput = doc.querySelector('form input[type="password"]');
+  const form = pwInput ? pwInput.closest("form") : null;
+  if (!form) throw new Error("Giriş sayfası beklenen biçimde değil.");
+
+  const body = new URLSearchParams();
+  // CSRF dahil tum gizli alanlar aynen tasinir.
+  form.querySelectorAll('input[type="hidden"]').forEach((i) => {
+    if (i.name) body.set(i.name, i.value);
+  });
+  const userInput = form.querySelector(
+    'input[type="text"], input[type="email"], input:not([type])'
+  );
+  body.set(userInput?.name || "username", username);
+  body.set(pwInput.name || "password", password);
+
+  const action = new URL(form.getAttribute("action") || "login", pageRes.url);
+  const res = await fetch(action, {
+    method: "POST",
+    credentials: "include",
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+      Accept: "text/html",
+    },
+    body: body.toString(),
+  });
+
+  // Basarisiz giris: login sayfasina error parametresiyle geri doner.
+  const backAtLogin = /\/SASLogon\/login/.test(res.url);
+  const hasError = /[?&]error/.test(res.url);
+  if (hasError || (backAtLogin && res.ok)) {
+    throw new Error("Kullanıcı kimliği veya parola hatalı.");
+  }
+  if (!res.ok && res.status !== 302) {
+    throw new Error(`Giriş başarısız (HTTP ${res.status}).`);
+  }
+}
+
 /** Oturumdaki kullanicinin kimlik bilgisi (ad + id + sunucudan gelen ham kayit). */
 export async function getCurrentUser(viyaUrl) {
   const res = await fetch(`${viyaUrl}/identities/users/@currentUser`, {

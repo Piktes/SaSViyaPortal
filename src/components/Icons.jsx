@@ -91,6 +91,22 @@ export const IconLogin = (p) => (
   </Svg>
 );
 
+export const IconEye = (p) => (
+  <Svg {...p}>
+    <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
+    <circle cx="12" cy="12" r="3" />
+  </Svg>
+);
+
+export const IconEyeOff = (p) => (
+  <Svg {...p}>
+    <path d="M17.94 17.94A10.6 10.6 0 0 1 12 19c-6.5 0-10-7-10-7a19 19 0 0 1 5.06-5.94" />
+    <path d="M9.9 4.24A9.5 9.5 0 0 1 12 4c6.5 0 10 7 10 7a19 19 0 0 1-3.1 4.2" />
+    <path d="M14.12 14.12a3 3 0 1 1-4.24-4.24" />
+    <path d="m2 2 20 20" />
+  </Svg>
+);
+
 export const IconSend = (p) => (
   <Svg {...p}>
     <path d="m22 2-7 20-4-9-9-4z" />

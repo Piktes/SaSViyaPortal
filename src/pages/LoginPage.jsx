@@ -1,11 +1,22 @@
 import { useState } from "react";
-import { IconSun, IconMoon } from "../components/Icons.jsx";
+import { IconSun, IconMoon, IconEye, IconEyeOff } from "../components/Icons.jsx";
 
 export default function LoginPage({ auth, theme }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const { isDark, toggleTheme, logoSrc } = theme;
 
-  const handleLogin = async () => {
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    await auth.loginWithPassword(username.trim(), password);
+    setLoading(false);
+  };
+
+  // Yedek yol: form girisi teknik bir nedenle calismazsa acilir pencereyle giris.
+  const handlePopupLogin = async () => {
     setLoading(true);
     await auth.login();
     setLoading(false);
@@ -46,11 +57,51 @@ export default function LoginPage({ auth, theme }) {
               <p className="login-subtitle">Rapor Portalı</p>
             </div>
 
-            <button className="login-btn" onClick={handleLogin} disabled={loading}>
-              {loading ? <span className="spinner" /> : "Giriş"}
-            </button>
+            <form className="login-form" onSubmit={handleSubmit}>
+              <label>
+                Kullanıcı Kimliği
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  autoComplete="username"
+                  required
+                  autoFocus
+                />
+              </label>
+
+              <label>
+                Parola
+                <div className="input-eye-wrap">
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="eye-btn"
+                    onClick={() => setShowPassword((v) => !v)}
+                    tabIndex={-1}
+                    title={showPassword ? "Parolayı gizle" : "Parolayı göster"}
+                  >
+                    {showPassword ? <IconEyeOff size={15} /> : <IconEye size={15} />}
+                  </button>
+                </div>
+              </label>
+
+              <button type="submit" className="login-btn" disabled={loading}>
+                {loading ? <span className="spinner" /> : "Giriş"}
+              </button>
+            </form>
 
             {auth.error && <div className="login-error">{auth.error}</div>}
+
+            <button type="button" className="login-alt" onClick={handlePopupLogin}>
+              Alternatif giriş (açılır pencere)
+            </button>
           </div>
         </div>
       </div>

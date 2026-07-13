@@ -274,6 +274,71 @@ body.light-theme .login-card {
   padding: 0.7rem 0.85rem;
 }
 
+.login-form { display: flex; flex-direction: column; gap: 0.9rem; }
+
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text-secondary);
+}
+
+.login-form input {
+  font-family: inherit;
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  background: var(--bg-input);
+  border: none;
+  box-shadow: var(--ring);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 0.8rem;
+  transition: var(--transition);
+  width: 100%;
+}
+.login-form input:focus { outline: none; box-shadow: var(--ring-focus); }
+
+.input-eye-wrap {
+  display: flex;
+  align-items: center;
+  background: var(--bg-input);
+  box-shadow: var(--ring);
+  border-radius: var(--radius-sm);
+  transition: var(--transition);
+}
+.input-eye-wrap:focus-within { box-shadow: var(--ring-focus); }
+.input-eye-wrap input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  box-shadow: none;
+  border-radius: 0;
+  outline: none;
+}
+.eye-btn {
+  flex-shrink: 0;
+  padding: 0 0.65rem;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+}
+.eye-btn:hover { color: var(--text-primary); }
+
+.login-alt {
+  display: block;
+  margin: 1rem auto 0;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.login-alt:hover { color: var(--text-secondary); }
+
 .login-error {
   padding: 0.625rem 0.875rem;
   background: var(--danger-bg);
