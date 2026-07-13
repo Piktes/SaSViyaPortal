@@ -15,13 +15,6 @@ export default function LoginPage({ auth, theme }) {
     setLoading(false);
   };
 
-  // Yedek yol: form girisi teknik bir nedenle calismazsa acilir pencereyle giris.
-  const handlePopupLogin = async () => {
-    setLoading(true);
-    await auth.login();
-    setLoading(false);
-  };
-
   return (
     <div className="login-page">
       {/* MEB filigran */}
@@ -98,10 +91,6 @@ export default function LoginPage({ auth, theme }) {
             </form>
 
             {auth.error && <div className="login-error">{auth.error}</div>}
-
-            <button type="button" className="login-alt" onClick={handlePopupLogin}>
-              Alternatif giriş (açılır pencere)
-            </button>
           </div>
         </div>
       </div>
