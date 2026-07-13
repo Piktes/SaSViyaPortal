@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IconSun, IconMoon, IconLogin } from "../components/Icons.jsx";
+import { IconSun, IconMoon } from "../components/Icons.jsx";
 
 export default function LoginPage({ auth, theme }) {
   const [loading, setLoading] = useState(false);
@@ -47,14 +47,7 @@ export default function LoginPage({ auth, theme }) {
             </div>
 
             <button className="login-btn" onClick={handleLogin} disabled={loading}>
-              {loading ? (
-                <span className="spinner" />
-              ) : (
-                <>
-                  <IconLogin size={18} />
-                  Kurumsal Giriş
-                </>
-              )}
+              {loading ? <span className="spinner" /> : "Giriş"}
             </button>
 
             {auth.error && <div className="login-error">{auth.error}</div>}
