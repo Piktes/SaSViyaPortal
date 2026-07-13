@@ -1,9 +1,9 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useApp } from "../App.jsx";
 import TopBar from "../components/TopBar.jsx";
 import ReportThumb from "../components/ReportThumb.jsx";
-import { IconChart, IconFile, IconSupport, IconSend } from "../components/Icons.jsx";
+import { IconChart, IconFile, IconSupport, IconSend, IconSearch } from "../components/Icons.jsx";
 import {
   listUserReports,
   exportReportPdf,
@@ -47,11 +47,42 @@ export default function HomePage() {
   );
 }
 
-/* Sekme 1: yonetici tanimli liste (reports.json) — canli gomulu goruntuleme. */
+/* Turkce-duyarli normalize: arama icin buyuk/kucuk ve aksan katlama. */
+function norm(s) {
+  return (s || "")
+    .toLocaleLowerCase("tr")
+    .replaceAll("ı", "i")
+    .replaceAll("ğ", "g")
+    .replaceAll("ü", "u")
+    .replaceAll("ş", "s")
+    .replaceAll("ö", "o")
+    .replaceAll("ç", "c")
+    .trim();
+}
+
+/* Sekme 1: yonetici tanimli, kategorili liste — canli gomulu goruntuleme. */
 function LiveReportsTab() {
   const { config } = useApp();
+  const [query, setQuery] = useState("");
 
-  if (config.reports.length === 0) {
+  const totalCount = config.reports.length;
+
+  // Aramaya gore kategorileri ve raporlari filtrele (isim uzerinden).
+  const filtered = useMemo(() => {
+    const categories = config.categories || [];
+    const q = norm(query);
+    if (!q) return categories;
+    return categories
+      .map((cat) => ({
+        ...cat,
+        reports: cat.reports.filter((r) => norm(r.name).includes(q)),
+      }))
+      .filter((cat) => cat.reports.length > 0);
+  }, [config.categories, query]);
+
+  const matchCount = filtered.reduce((n, c) => n + c.reports.length, 0);
+
+  if (totalCount === 0) {
     return (
       <p className="state-note">
         Tanımlı rapor yok. Sunucudaki <code>reports.json</code> dosyasına rapor ekleyin.
@@ -61,21 +92,59 @@ function LiveReportsTab() {
 
   return (
     <>
-      <div className="card-grid">
-        {config.reports.map((report) => (
-          <Link key={report.id} to={`/report/${report.id}`} className="report-card">
-            <div className="report-thumb">
-              <ReportThumb seed={report.name + report.id} />
-            </div>
-            <div className="report-card-body">
-              <h3>{report.name}</h3>
-              {report.description && <p>{report.description}</p>}
-            </div>
-          </Link>
-        ))}
+      <div className="search-bar">
+        <IconSearch size={17} />
+        <input
+          type="text"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder={`Rapor ara… (${totalCount} rapor)`}
+          autoFocus
+        />
+        {query && (
+          <button className="search-clear" onClick={() => setQuery("")} title="Temizle">
+            ✕
+          </button>
+        )}
       </div>
-      <p className="muted small">
-        Raporlar canlı olarak açılır; erişim yetkiniz olmayan raporlar görüntülenmez.
+
+      {filtered.length === 0 ? (
+        <p className="state-note">"{query}" ile eşleşen rapor bulunamadı.</p>
+      ) : (
+        filtered.map((cat) => (
+          <section key={cat.name} className="report-section">
+            {cat.name && (
+              <h2 className="report-section-title">
+                <span>{cat.name}</span>
+                <span className="report-count">{cat.reports.length}</span>
+              </h2>
+            )}
+            <div className="card-grid">
+              {cat.reports.map((report, i) => (
+                <Link
+                  key={report.id}
+                  to={`/report/${report.id}`}
+                  className="report-card"
+                  style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}
+                >
+                  <div className="report-thumb">
+                    <ReportThumb seed={report.name + report.id} />
+                    {report.isNew && <span className="report-badge">Yeni</span>}
+                  </div>
+                  <div className="report-card-body">
+                    <h3>{report.name}</h3>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ))
+      )}
+
+      <p className="muted small" style={{ marginTop: "1.25rem" }}>
+        {query
+          ? `${matchCount} rapor eşleşti.`
+          : "Raporlar canlı olarak açılır; erişim yetkiniz olmayan raporlar görüntülenmez."}
       </p>
     </>
   );

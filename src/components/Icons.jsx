@@ -107,6 +107,13 @@ export const IconEyeOff = (p) => (
   </Svg>
 );
 
+export const IconSearch = (p) => (
+  <Svg {...p}>
+    <circle cx="11" cy="11" r="7" />
+    <path d="m21 21-4.3-4.3" />
+  </Svg>
+);
+
 export const IconSend = (p) => (
   <Svg {...p}>
     <path d="m22 2-7 20-4-9-9-4z" />
