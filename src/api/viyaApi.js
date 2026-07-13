@@ -8,7 +8,7 @@ export function isReportUuid(value) {
   return typeof value === "string" && UUID_RE.test(value);
 }
 
-/** Oturumdaki kullanicinin kimlik bilgisi (ad + id). */
+/** Oturumdaki kullanicinin kimlik bilgisi (ad + id + sunucudan gelen ham kayit). */
 export async function getCurrentUser(viyaUrl) {
   const res = await fetch(`${viyaUrl}/identities/users/@currentUser`, {
     credentials: "include",
@@ -16,7 +16,25 @@ export async function getCurrentUser(viyaUrl) {
   });
   if (!res.ok) throw new Error(`Kullanıcı bilgisi alınamadı (HTTP ${res.status}).`);
   const body = await res.json();
-  return { id: body.id || "", name: body.name || body.id || "" };
+  return { id: body.id || "", name: body.name || body.id || "", raw: body };
+}
+
+/** Kullanicinin uye oldugu gruplar (varsa). */
+export async function getUserMemberships(viyaUrl) {
+  const res = await fetch(
+    `${viyaUrl}/identities/users/@currentUser/memberships?limit=100`,
+    {
+      credentials: "include",
+      headers: { Accept: "application/vnd.sas.collection+json, application/json" },
+    }
+  );
+  if (!res.ok) throw new Error(`Grup bilgisi alınamadı (HTTP ${res.status}).`);
+  const body = await res.json();
+  return (body.items || []).map((g) => ({
+    id: g.id || "",
+    name: g.name || g.id || "",
+    providerId: g.providerId || "",
+  }));
 }
 
 /** Kullanicinin erisebildigi raporlari listeler (sasrapor: list_reports). */

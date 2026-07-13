@@ -366,6 +366,10 @@ body.light-theme .login-card {
 .topbar-actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
 
 .user-chip {
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  transition: var(--transition);
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
@@ -380,6 +384,7 @@ body.light-theme .login-card {
   overflow: hidden;
   text-overflow: ellipsis;
 }
+.user-chip:hover { box-shadow: var(--ring-hover); color: var(--text-primary); }
 
 /* ─── Ana sayfa & sekmeler ─── */
 .page { min-height: 100vh; display: flex; flex-direction: column; }
@@ -533,6 +538,80 @@ body.light-theme .login-card {
 .report-page { height: 100vh; display: flex; flex-direction: column; }
 .report-frame { flex: 1; min-height: 0; background: #fff; }
 .report-frame sas-report { display: block; width: 100%; height: 100%; }
+
+/* ─── Modal (oturum bilgileri) ─── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.modal-panel {
+  background: var(--bg-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card-hover);
+  padding: 1.5rem;
+  width: 560px;
+  max-width: 100%;
+  max-height: 82vh;
+  overflow-y: auto;
+}
+
+.modal-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.modal-head h2 { font-size: 1.1rem; letter-spacing: -0.3px; }
+
+.modal-section {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  margin: 1rem 0 0.5rem;
+  font-weight: 600;
+}
+
+.kv-table { width: 100%; border-collapse: collapse; }
+.kv-table td {
+  padding: 0.45rem 0.6rem;
+  font-size: 0.85rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  word-break: break-word;
+}
+.kv-table tr:last-child td { border-bottom: none; }
+.kv-table .kv-key {
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  white-space: nowrap;
+  width: 38%;
+}
+
+.group-list { list-style: none; display: flex; flex-direction: column; gap: 0.35rem; }
+.group-list li { font-size: 0.85rem; }
+
+.raw-json {
+  margin-top: 0.75rem;
+  background: var(--bg-input);
+  box-shadow: var(--ring);
+  border-radius: var(--radius-sm);
+  padding: 0.8rem;
+  font-size: 0.72rem;
+  font-family: var(--font-mono);
+  overflow-x: auto;
+  white-space: pre;
+  color: var(--text-secondary);
+}
 
 /* ─── Ortalanmış panel (hata/404/yükleniyor) ─── */
 .center-screen {

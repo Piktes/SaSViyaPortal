@@ -1,5 +1,7 @@
+import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useApp } from "../App.jsx";
+import UserInfoModal from "./UserInfoModal.jsx";
 import {
   IconSun,
   IconMoon,
@@ -11,6 +13,7 @@ import {
 export default function TopBar({ title, backTo, extra }) {
   const { auth, theme, currentUser } = useApp();
   const { isDark, toggleTheme, logoSrc } = theme;
+  const [showUserInfo, setShowUserInfo] = useState(false);
 
   return (
     <header className="topbar">
@@ -29,10 +32,14 @@ export default function TopBar({ title, backTo, extra }) {
       <div className="topbar-actions">
         {extra}
         {currentUser?.name && (
-          <span className="user-chip" title={currentUser.id}>
+          <button
+            className="user-chip"
+            title="Oturum bilgilerini görüntüle"
+            onClick={() => setShowUserInfo(true)}
+          >
             <IconUser size={14} />
             {currentUser.name}
-          </span>
+          </button>
         )}
         <button className="icon-btn" onClick={toggleTheme} title="Tema Değiştir">
           {isDark ? <IconSun /> : <IconMoon />}
@@ -42,6 +49,7 @@ export default function TopBar({ title, backTo, extra }) {
           Çıkış
         </button>
       </div>
+      {showUserInfo && <UserInfoModal onClose={() => setShowUserInfo(false)} />}
     </header>
   );
 }
