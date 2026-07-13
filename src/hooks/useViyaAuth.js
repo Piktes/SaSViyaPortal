@@ -33,8 +33,8 @@ export function useViyaAuth(viyaUrl) {
       setStatus("authenticated");
     } catch {
       setError(
-        "Giriş tamamlanamadı. Popup engellenmiş olabilir ya da Viya sunucusuna erişilemiyor " +
-          "(CORS / cross-site cookie ayarları henüz yapılmadıysa giriş çalışmaz — README'ye bakın)."
+        "Giriş tamamlanamadı. Açılır pencere engellenmiş olabilir ya da sunucuya şu an erişilemiyor. " +
+          "Lütfen tekrar deneyin."
       );
     }
   }, [viyaUrl]);

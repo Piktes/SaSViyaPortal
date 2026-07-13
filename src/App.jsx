@@ -3,6 +3,7 @@ import { Route, Routes } from "react-router-dom";
 import { loadConfig } from "./config/loadConfig.js";
 import { useViyaAuth } from "./hooks/useViyaAuth.js";
 import { useTheme } from "./hooks/useTheme.js";
+import { getCurrentUser } from "./api/viyaApi.js";
 import LoginPage from "./pages/LoginPage.jsx";
 import HomePage from "./pages/HomePage.jsx";
 import ReportViewPage from "./pages/ReportViewPage.jsx";
@@ -26,6 +27,26 @@ export default function App() {
   }, []);
 
   const auth = useViyaAuth(config?.viyaUrl);
+  const [currentUser, setCurrentUser] = useState(null);
+
+  // Giris sonrasi oturumdaki kullaniciyi al (ust seritte gosterilir).
+  useEffect(() => {
+    if (auth.status !== "authenticated" || !config) {
+      setCurrentUser(null);
+      return;
+    }
+    let cancelled = false;
+    getCurrentUser(config.viyaUrl)
+      .then((u) => {
+        if (!cancelled) setCurrentUser(u);
+      })
+      .catch(() => {
+        if (!cancelled) setCurrentUser(null); // bilgi alinamazsa sessizce gecilir
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [auth.status, config]);
 
   if (configError) {
     return (
@@ -53,11 +74,11 @@ export default function App() {
   // Yonlendirme yapilmadigi icin (rota korunur) open-redirect riski yoktur;
   // giris sonrasi kullanici zaten istedigi /report/:id rotasinda kalir.
   if (auth.status !== "authenticated") {
-    return <LoginPage auth={auth} viyaUrl={config.viyaUrl} theme={theme} />;
+    return <LoginPage auth={auth} theme={theme} />;
   }
 
   return (
-    <AppContext.Provider value={{ config, auth, theme }}>
+    <AppContext.Provider value={{ config, auth, theme, currentUser }}>
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/report/:id" element={<ReportViewPage />} />

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useApp } from "../App.jsx";
 import TopBar from "../components/TopBar.jsx";
 import ReportThumb from "../components/ReportThumb.jsx";
+import { IconChart, IconFile, IconSupport, IconSend } from "../components/Icons.jsx";
 import {
   listUserReports,
   exportReportPdf,
@@ -22,17 +23,25 @@ export default function HomePage() {
             className={`tab ${tab === "live" ? "active" : ""}`}
             onClick={() => setTab("live")}
           >
-            📊 Canlı Raporlar
+            <IconChart /> Canlı Raporlar
           </button>
           <button
             className={`tab ${tab === "pdf" ? "active" : ""}`}
             onClick={() => setTab("pdf")}
           >
-            📄 Rapor Çıktıları
+            <IconFile /> Rapor Çıktıları
+          </button>
+          <button
+            className={`tab ${tab === "support" ? "active" : ""}`}
+            onClick={() => setTab("support")}
+          >
+            <IconSupport /> Sorun Bildir
           </button>
         </div>
 
-        {tab === "live" ? <LiveReportsTab /> : <PdfOutputsTab />}
+        {tab === "live" && <LiveReportsTab />}
+        {tab === "pdf" && <PdfOutputsTab />}
+        {tab === "support" && <SupportTab />}
       </main>
     </div>
   );
@@ -66,14 +75,13 @@ function LiveReportsTab() {
         ))}
       </div>
       <p className="muted small">
-        Raporlar SAS Viya üzerinde canlı olarak açılır; erişim yetkiniz yoksa rapor
-        görüntülenmez.
+        Raporlar canlı olarak açılır; erişim yetkiniz olmayan raporlar görüntülenmez.
       </p>
     </>
   );
 }
 
-/* Sekme 2: kullanicinin Viya'da erisebildigi raporlar + PDF export (sasrapor mantigi). */
+/* Sekme 2: kullanicinin erisebildigi raporlar + PDF export (sasrapor mantigi). */
 function PdfOutputsTab() {
   const { config } = useApp();
   const [state, setState] = useState({ status: "loading", reports: [], error: null });
@@ -110,7 +118,7 @@ function PdfOutputsTab() {
     return (
       <p className="state-note">
         <span className="spinner dark" style={{ marginRight: 8 }} />
-        Erişebildiğiniz raporlar Viya'dan alınıyor…
+        Erişiminize açık raporlar alınıyor…
       </p>
     );
   }
@@ -120,15 +128,14 @@ function PdfOutputsTab() {
   }
 
   if (state.reports.length === 0) {
-    return <p className="state-note">Viya'da erişebildiğiniz rapor bulunamadı.</p>;
+    return <p className="state-note">Erişiminize açık rapor bulunamadı.</p>;
   }
 
   return (
     <>
       <p className="muted small" style={{ marginBottom: "0.9rem" }}>
-        Bu liste, SAS Viya'da <strong>sizin erişiminize açık</strong> raporlardır. "PDF
-        İndir"e tıkladığınızda çıktı Viya üzerinde hazırlanır — rapora göre 10-60 saniye
-        sürebilir.
+        Bu liste <strong>erişiminize açık</strong> raporlardır. "PDF İndir"e
+        tıkladığınızda çıktı sunucuda hazırlanır — rapora göre 10-60 saniye sürebilir.
       </p>
       <div className="table-wrap">
         <table className="output-table">
@@ -175,6 +182,85 @@ function PdfOutputsTab() {
         </table>
       </div>
     </>
+  );
+}
+
+/* Sekme 3: sorun bildirimi — e-posta istemcisi uzerinden yoneticiye iletilir. */
+function SupportTab() {
+  const { config, currentUser } = useApp();
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [sent, setSent] = useState(false);
+
+  const supportEmail = config.supportEmail;
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const body = [
+      `Bildiren: ${currentUser?.name || "bilinmiyor"} (${currentUser?.id || "-"})`,
+      `Tarih: ${new Date().toLocaleString("tr-TR")}`,
+      "",
+      message,
+    ].join("\n");
+    window.location.href =
+      `mailto:${supportEmail}` +
+      `?subject=${encodeURIComponent(`[BYS Rapor Portalı] ${subject}`)}` +
+      `&body=${encodeURIComponent(body)}`;
+    setSent(true);
+  };
+
+  return (
+    <div className="support-wrap">
+      <p className="muted small" style={{ marginBottom: "1rem" }}>
+        Portalda yaşadığınız sorunu ya da önerinizi buradan iletebilirsiniz.
+        {currentUser?.name && (
+          <>
+            {" "}Bildirim, <strong>{currentUser.name}</strong> adına gönderilecektir.
+          </>
+        )}
+      </p>
+
+      {!supportEmail ? (
+        <p className="state-note">
+          Sorun bildirimi için yönetici e-posta adresi henüz yapılandırılmadı.
+          (<code>reports.json</code> içine <code>supportEmail</code> ekleyin.)
+        </p>
+      ) : (
+        <form className="support-form" onSubmit={handleSubmit}>
+          <label>
+            Konu
+            <input
+              type="text"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Örn. Rapor açılmıyor"
+              required
+              maxLength={120}
+            />
+          </label>
+          <label>
+            Açıklama
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Sorunu kısaca anlatın: hangi rapor, ne zaman, hangi hata..."
+              rows={6}
+              required
+            />
+          </label>
+          <div className="support-actions">
+            <button type="submit" className="btn btn-primary">
+              <IconSend size={15} /> Gönder
+            </button>
+            {sent && (
+              <span className="muted small">
+                E-posta uygulamanız açıldı — göndermeyi orada tamamlayın.
+              </span>
+            )}
+          </div>
+        </form>
+      )}
+    </div>
   );
 }
 

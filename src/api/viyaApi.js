@@ -8,6 +8,17 @@ export function isReportUuid(value) {
   return typeof value === "string" && UUID_RE.test(value);
 }
 
+/** Oturumdaki kullanicinin kimlik bilgisi (ad + id). */
+export async function getCurrentUser(viyaUrl) {
+  const res = await fetch(`${viyaUrl}/identities/users/@currentUser`, {
+    credentials: "include",
+    headers: { Accept: "application/vnd.sas.identity.user+json, application/json" },
+  });
+  if (!res.ok) throw new Error(`Kullanıcı bilgisi alınamadı (HTTP ${res.status}).`);
+  const body = await res.json();
+  return { id: body.id || "", name: body.name || body.id || "" };
+}
+
 /** Kullanicinin erisebildigi raporlari listeler (sasrapor: list_reports). */
 export async function listUserReports(viyaUrl, limit = 100) {
   const res = await fetch(`${viyaUrl}/reports/reports?limit=${limit}&sortBy=name`, {

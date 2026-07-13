@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { IconSun, IconMoon, IconLogin } from "../components/Icons.jsx";
 
-export default function LoginPage({ auth, viyaUrl, theme }) {
+export default function LoginPage({ auth, theme }) {
   const [loading, setLoading] = useState(false);
   const { isDark, toggleTheme, logoSrc } = theme;
 
@@ -37,7 +38,7 @@ export default function LoginPage({ auth, viyaUrl, theme }) {
               onClick={toggleTheme}
               title="Tema Değiştir"
             >
-              {isDark ? "☀️" : "🌙"}
+              {isDark ? <IconSun /> : <IconMoon />}
             </button>
 
             <div className="login-title">
@@ -46,16 +47,17 @@ export default function LoginPage({ auth, viyaUrl, theme }) {
             </div>
 
             <button className="login-btn" onClick={handleLogin} disabled={loading}>
-              {loading ? <span className="spinner" /> : "SAS Viya ile Giriş Yap"}
+              {loading ? (
+                <span className="spinner" />
+              ) : (
+                <>
+                  <IconLogin size={18} />
+                  Kurumsal Giriş
+                </>
+              )}
             </button>
 
             {auth.error && <div className="login-error">{auth.error}</div>}
-
-            <div className="login-info">
-              ℹ️ Girişte açılan pencereye <strong>BYS (SAS Viya)</strong> kullanıcı adı ve
-              şifrenizi yazın. Kimlik bilgileriniz yalnızca <code>{viyaUrl}</code> adresine
-              iletilir, bu uygulamada saklanmaz.
-            </div>
           </div>
         </div>
       </div>

@@ -62,7 +62,13 @@ export async function loadConfig() {
     console.warn("[reports.json] Geçersiz olduğu için atlanan kayıtlar:", skipped);
   }
 
-  return { viyaUrl, reports, skippedCount: skipped.length };
+  // Opsiyonel: Sorun Bildir sekmesinin gonderecegi yonetici e-postasi.
+  const supportEmail =
+    typeof raw.supportEmail === "string" && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw.supportEmail)
+      ? raw.supportEmail
+      : "";
+
+  return { viyaUrl, reports, supportEmail, skippedCount: skipped.length };
 }
 
 function validateReport(item, seenIds) {

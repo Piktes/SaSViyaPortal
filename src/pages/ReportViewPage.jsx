@@ -4,6 +4,7 @@ import { useApp } from "../App.jsx";
 import TopBar from "../components/TopBar.jsx";
 import NotFoundPage from "./NotFoundPage.jsx";
 import { exportReportPdf, downloadBlob, safeFileName } from "../api/viyaApi.js";
+import { IconDownload } from "../components/Icons.jsx";
 
 export default function ReportViewPage() {
   const { id } = useParams();
@@ -36,7 +37,9 @@ export default function ReportViewPage() {
           <span className="spinner dark" /> PDF hazırlanıyor…
         </>
       ) : (
-        "⬇ PDF"
+        <>
+          <IconDownload size={15} /> PDF
+        </>
       )}
     </button>
   );
