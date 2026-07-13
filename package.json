@@ -7,6 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
+    "start": "node server/server.mjs",
     "lint": "eslint .",
     "copy-sdk": "node scripts/copy-sdk.mjs",
     "postinstall": "node scripts/copy-sdk.mjs"

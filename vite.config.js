@@ -1,5 +1,6 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { VIYA_ROOTS, fixSetCookie } from "./viya-roots.mjs";
 
 // ---------------------------------------------------------------------------
 // YAYIN ONCESI: Viya sunucunuzun origin'ini girin (orn. "https://viya.kurum.gov.tr").
@@ -66,60 +67,18 @@ function buildDevProxy(target) {
         proxyReq.removeHeader("referer");
       });
       // Viya bazi cerezleri "SameSite=None" ama "Secure"suz gonderiyor;
-      // tarayicilar bu kombinasyonu reddeder (localhost'ta Secure cerez
-      // http uzerinden de kabul edilir). Eksik Secure'u tamamla.
+      // tarayicilar bu kombinasyonu reddeder. Eksik Secure'u tamamla.
       proxy.on("proxyRes", (proxyRes) => {
-        const cookies = proxyRes.headers["set-cookie"];
-        if (cookies) {
-          proxyRes.headers["set-cookie"] = cookies.map((c) =>
-            /samesite=none/i.test(c) && !/;\s*secure/i.test(c) ? `${c}; Secure` : c
-          );
+        if (proxyRes.headers["set-cookie"]) {
+          proxyRes.headers["set-cookie"] = fixSetCookie(proxyRes.headers["set-cookie"]);
         }
       });
     },
   };
-  // va-report-components, verilen url'nin yolunu degil origin'ini kullanip
-  // servis cagrilarini kok yollara atar (/identities, /reports, ...).
-  // Bu yuzden Viya'nin tum servis kokleri proxy'lenir. "/reports" deseni
-  // bilerek "(/|$)" ile bitiyor: /reports.json (uygulama config'i) eslesmez.
-  const viyaRoots = [
-    "SASLogon",
-    "SASVisualAnalytics",
-    "SASReportViewer",
-    "identities",
-    "reports",
-    "reportImages",
-    "reportPackages",
-    "reportData",
-    "reportOperations",
-    "reportTemplates",
-    "visualAnalytics",
-    "folders",
-    "files",
-    "casManagement",
-    "casProxy",
-    "themes",
-    "preferences",
-    "deviceManagement",
-    "maps",
-    "webDataAccess",
-    "comments",
-    "appRegistry",
-    "authorization",
-    "configuration",
-    "searchIndex",
-    "annotations",
-    "featureFlags",
-    "audit",
-    "dataSources",
-    "dataTables",
-    "compute",
-    "jobExecution",
-    "launcher",
-  ];
+  // Servis kokleri paylasilan viya-roots.mjs'ten gelir (prod ile ayni liste).
   return {
     "/viya": { ...common, rewrite: (p) => p.replace(/^\/viya/, "") },
-    [`^/(${viyaRoots.join("|")})(/|$)`]: { ...common },
+    [`^/(${VIYA_ROOTS.join("|")})(/|$)`]: { ...common },
   };
 }
 
