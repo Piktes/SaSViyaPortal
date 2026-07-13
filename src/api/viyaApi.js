@@ -59,6 +59,68 @@ export async function passwordLogin(viyaUrl, username, password) {
   if (!res.ok && res.status !== 302) {
     throw new Error(`Giriş başarısız (HTTP ${res.status}).`);
   }
+
+  // Admin/grup uyeleri icin "Assumable Groups" onay adimini otomatik gec.
+  await completeConsentSteps(viyaUrl);
+}
+
+/**
+ * Giristen sonra cikan ara onay sayfalarini (SAS "Assumable Groups" opt-in gibi)
+ * otomatik olarak "Evet" ile gecer. SDK'nin bekledigi basari isaretine ulasana
+ * kadar (en fazla birkac tur) formu bulup gonderir.
+ */
+async function completeConsentSteps(viyaUrl, maxSteps = 4) {
+  for (let i = 0; i < maxSteps; i++) {
+    const r = await fetch(`${viyaUrl}/SASVisualAnalytics/logon/index.html`, {
+      credentials: "include",
+      headers: { Accept: "text/html" },
+    });
+    const text = await r.text();
+    if (text.includes("data-report-sas-auth-success")) return; // oturum tamam
+    if (/\/SASLogon\/login/.test(r.url)) return; // login'e dustu — burada durma, ust katman kontrol eder
+
+    const doc = new DOMParser().parseFromString(text, "text/html");
+    const form = pickConsentForm(doc);
+    if (!form) return; // taninmayan sayfa — checkAuthenticated karar versin
+
+    const body = new URLSearchParams();
+    form.querySelectorAll('input[type="hidden"]').forEach((inp) => {
+      if (inp.name) body.set(inp.name, inp.value);
+    });
+    // Onaylama ("Evet"/"Yes") butonunu/alanini secip gonderime ekle.
+    const affirm = pickAffirmative(form);
+    if (affirm && affirm.name) body.set(affirm.name, affirm.value || "true");
+
+    const action = new URL(form.getAttribute("action") || r.url, r.url);
+    await fetch(action, {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Accept: "text/html",
+      },
+      body: body.toString(),
+    });
+  }
+}
+
+function pickConsentForm(doc) {
+  const forms = [...doc.querySelectorAll("form")];
+  // Icinde parola alani OLMAYAN (yani login degil) ilk form onay formudur.
+  return forms.find((f) => !f.querySelector('input[type="password"]')) || null;
+}
+
+function pickAffirmative(form) {
+  const candidates = [
+    ...form.querySelectorAll(
+      'button, input[type="submit"], input[type="radio"], input[type="checkbox"]'
+    ),
+  ];
+  const isYes = (el) => {
+    const t = `${el.value || ""} ${el.textContent || ""} ${el.name || ""}`.toLowerCase();
+    return /(yes|evet|opt.?in|true|assume)/.test(t) && !/(no|hayır|false|opt.?out)/.test(t);
+  };
+  return candidates.find(isYes) || candidates[0] || null;
 }
 
 /** Oturumdaki kullanicinin kimlik bilgisi (ad + id + sunucudan gelen ham kayit). */
