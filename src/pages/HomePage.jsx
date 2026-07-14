@@ -2,15 +2,15 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { useApp } from "../App.jsx";
 import TopBar from "../components/TopBar.jsx";
-import ReportThumb from "../components/ReportThumb.jsx";
-import CategoryDeck from "../components/CategoryDeck.jsx";
 import {
   IconChart,
   IconFile,
   IconSupport,
   IconSend,
   IconSearch,
-  IconArrowLeft,
+  IconBell,
+  IconChevron,
+  IconArrowRight,
 } from "../components/Icons.jsx";
 import {
   listUserReports,
@@ -19,34 +19,36 @@ import {
   safeFileName,
 } from "../api/viyaApi.js";
 
+const TABS = [
+  { id: "duyurular", label: "Duyurular", icon: IconBell },
+  { id: "live", label: "Canlı Raporlar", icon: IconChart },
+  { id: "pdf", label: "Rapor Çıktıları", icon: IconFile },
+  { id: "support", label: "Sorun Bildir", icon: IconSupport },
+];
+
 export default function HomePage() {
-  const [tab, setTab] = useState("live");
+  const [tab, setTab] = useState("duyurular");
 
   return (
     <div className="page">
       <TopBar />
       <main className="content">
         <div className="tabs">
-          <button
-            className={`tab ${tab === "live" ? "active" : ""}`}
-            onClick={() => setTab("live")}
-          >
-            <IconChart /> Canlı Raporlar
-          </button>
-          <button
-            className={`tab ${tab === "pdf" ? "active" : ""}`}
-            onClick={() => setTab("pdf")}
-          >
-            <IconFile /> Rapor Çıktıları
-          </button>
-          <button
-            className={`tab ${tab === "support" ? "active" : ""}`}
-            onClick={() => setTab("support")}
-          >
-            <IconSupport /> Sorun Bildir
-          </button>
+          {TABS.map((t) => {
+            const Icon = t.icon;
+            return (
+              <button
+                key={t.id}
+                className={`tab ${tab === t.id ? "active" : ""}`}
+                onClick={() => setTab(t.id)}
+              >
+                <Icon /> {t.label}
+              </button>
+            );
+          })}
         </div>
 
+        {tab === "duyurular" && <AnnouncementsTab />}
         {tab === "live" && <LiveReportsTab />}
         {tab === "pdf" && <PdfOutputsTab />}
         {tab === "support" && <SupportTab />}
@@ -68,47 +70,80 @@ function norm(s) {
     .trim();
 }
 
-/* Tek rapor karti (grid ve arama sonuclarinda ortak). */
-function ReportCard({ report, index, categoryName }) {
+/* ─── Sekme 0: Duyurular ─── */
+function AnnouncementsTab() {
+  // Yarinin tarihi (Europe/Istanbul icin yerel tarih yeterli).
+  const tomorrow = new Date();
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  const dateStr = tomorrow.toLocaleDateString("tr-TR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+  });
+
+  return (
+    <div className="announce-wrap">
+      <div className="announce-item">
+        <div className="announce-head">
+          <span className="announce-badge">
+            <IconBell size={14} /> Duyuru
+          </span>
+          <span className="announce-date">{dateStr}</span>
+        </div>
+        <p className="announce-text">
+          Artık ilinize ait <strong>"Öğrencinin Okul Terkini Etkileyen Faktörler"</strong>{" "}
+          raporu <strong>Eğitim Öğretim</strong> başlığı altında yayındadır!
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* Tek rapor butonu (akordeon ve arama sonuclarinda ortak). */
+function ReportButton({ report, index }) {
   return (
     <Link
       to={`/report/${report.id}`}
-      className="report-card"
-      style={{ animationDelay: `${Math.min(index, 14) * 30}ms` }}
+      className="report-btn"
+      style={{ animationDelay: `${Math.min(index, 16) * 22}ms` }}
     >
-      <div className="report-thumb">
-        <ReportThumb seed={report.name + report.id} />
-        {report.isNew && <span className="report-badge">Yeni</span>}
-      </div>
-      <div className="report-card-body">
-        <h3>{report.name}</h3>
-        {categoryName && <span className="report-cat-tag">{categoryName}</span>}
-      </div>
+      <span className="report-btn-name">{report.name}</span>
+      {report.isNew && <span className="report-btn-new">Yeni</span>}
+      <IconArrowRight size={15} className="report-btn-arrow" />
     </Link>
   );
 }
 
-/* Sekme 1: kategori desteleri (hover'da acilir) + kategori detayi + arama. */
+/* ─── Sekme 1: Canlı Raporlar (akordeon) ─── */
 function LiveReportsTab() {
   const { config } = useApp();
   const [query, setQuery] = useState("");
-  const [openCat, setOpenCat] = useState(null); // acilan kategori (deste tiklaninca)
+  const [open, setOpen] = useState(() => new Set());
 
   const categories = useMemo(() => config.categories || [], [config.categories]);
   const totalCount = config.reports.length;
+  const searching = query.trim() !== "";
 
-  // Arama: tum raporlarda isimden (kategori etiketiyle birlikte).
-  const searchResults = useMemo(() => {
+  // Arama: her kategoriyi filtrele; eslesmeyen kategori gizlenir, eslesenler acilir.
+  const view = useMemo(() => {
     const q = norm(query);
-    if (!q) return null;
-    const out = [];
-    for (const cat of categories) {
-      for (const r of cat.reports) {
-        if (norm(r.name).includes(q)) out.push({ report: r, catName: cat.name });
-      }
-    }
-    return out;
+    return categories
+      .map((cat) => ({
+        name: cat.name,
+        reports: q ? cat.reports.filter((r) => norm(r.name).includes(q)) : cat.reports,
+      }))
+      .filter((cat) => !q || cat.reports.length > 0);
   }, [categories, query]);
+
+  const matchCount = view.reduce((n, c) => n + c.reports.length, 0);
+
+  const toggle = (name) => {
+    setOpen((prev) => {
+      const next = new Set(prev);
+      next.has(name) ? next.delete(name) : next.add(name);
+      return next;
+    });
+  };
 
   if (totalCount === 0) {
     return (
@@ -118,8 +153,6 @@ function LiveReportsTab() {
     );
   }
 
-  const searching = query.trim() !== "";
-
   return (
     <>
       <div className="search-bar">
@@ -127,10 +160,7 @@ function LiveReportsTab() {
         <input
           type="text"
           value={query}
-          onChange={(e) => {
-            setQuery(e.target.value);
-            setOpenCat(null);
-          }}
+          onChange={(e) => setQuery(e.target.value)}
           placeholder={`Rapor ara… (${totalCount} rapor)`}
         />
         {query && (
@@ -140,59 +170,48 @@ function LiveReportsTab() {
         )}
       </div>
 
-      {/* 1) Arama modu: eslesen raporlar duz grid */}
-      {searching ? (
-        searchResults.length === 0 ? (
-          <p className="state-note">"{query}" ile eşleşen rapor bulunamadı.</p>
-        ) : (
-          <>
-            <div className="card-grid">
-              {searchResults.map(({ report, catName }, i) => (
-                <ReportCard key={report.id} report={report} index={i} categoryName={catName} />
-              ))}
-            </div>
-            <p className="muted small" style={{ marginTop: "1.25rem" }}>
-              {searchResults.length} rapor eşleşti.
-            </p>
-          </>
-        )
-      ) : openCat ? (
-        /* 2) Kategori detayi: secilen kategorinin tum raporlari */
-        <section className="report-section">
-          <div className="cat-detail-head">
-            <button className="btn btn-ghost" onClick={() => setOpenCat(null)}>
-              <IconArrowLeft size={15} /> Kategoriler
-            </button>
-            <h2 className="cat-detail-title">
-              {openCat.name}
-              <span className="report-count">{openCat.reports.length}</span>
-            </h2>
-          </div>
-          <div className="card-grid">
-            {openCat.reports.map((report, i) => (
-              <ReportCard key={report.id} report={report} index={i} />
-            ))}
-          </div>
-        </section>
+      {searching && view.length === 0 ? (
+        <p className="state-note">"{query}" ile eşleşen rapor bulunamadı.</p>
       ) : (
-        /* 3) Genel gorunum: kategori desteleri (hover'da acilir) */
-        <>
-          <div className="deck-grid">
-            {categories.map((cat, i) => (
-              <CategoryDeck key={cat.name} category={cat} index={i} onOpen={setOpenCat} />
-            ))}
-          </div>
-          <p className="muted small" style={{ marginTop: "1.5rem" }}>
-            Bir kategorinin üzerine gelin, kartlar açılsın; tıklayınca tüm raporları görün.
-            Ya da yukarıdan arayın.
-          </p>
-        </>
+        <div className="accordion">
+          {view.map((cat) => {
+            const isOpen = searching || open.has(cat.name);
+            return (
+              <div className={`acc ${isOpen ? "open" : ""}`} key={cat.name}>
+                <button
+                  className="acc-head"
+                  onClick={() => !searching && toggle(cat.name)}
+                  aria-expanded={isOpen}
+                >
+                  <span className="acc-title">{cat.name}</span>
+                  <span className="acc-count">{cat.reports.length}</span>
+                  <IconChevron size={18} className="acc-chevron" />
+                </button>
+                <div className="acc-panel">
+                  <div className="acc-panel-inner">
+                    <div className="btn-grid">
+                      {cat.reports.map((r, i) => (
+                        <ReportButton key={r.id} report={r} index={i} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       )}
+
+      <p className="muted small" style={{ marginTop: "1.5rem" }}>
+        {searching
+          ? `${matchCount} rapor eşleşti.`
+          : "Bir başlığa tıklayın, raporlar açılsın. Ya da yukarıdan arayın."}
+      </p>
     </>
   );
 }
 
-/* Sekme 2: kullanicinin erisebildigi raporlar + PDF export (sasrapor mantigi). */
+/* ─── Sekme 2: Rapor Çıktıları (kullanicinin erisebildigi raporlar + PDF) ─── */
 function PdfOutputsTab() {
   const { config } = useApp();
   const [state, setState] = useState({ status: "loading", reports: [], error: null });
@@ -233,11 +252,9 @@ function PdfOutputsTab() {
       </p>
     );
   }
-
   if (state.status === "error") {
     return <p className="state-note error-text">{state.error}</p>;
   }
-
   if (state.reports.length === 0) {
     return <p className="state-note">Erişiminize açık rapor bulunamadı.</p>;
   }
@@ -296,7 +313,7 @@ function PdfOutputsTab() {
   );
 }
 
-/* Sekme 3: sorun bildirimi — e-posta istemcisi uzerinden yoneticiye iletilir. */
+/* ─── Sekme 3: Sorun Bildir ─── */
 function SupportTab() {
   const { config, currentUser } = useApp();
   const [subject, setSubject] = useState("");
