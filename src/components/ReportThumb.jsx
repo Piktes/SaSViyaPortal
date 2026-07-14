@@ -1,5 +1,5 @@
-// Rapor adi/id'sinden deterministik uretilen dekoratif thumbnail:
-// her kartin rengi/mini grafigi farklidir ama Viya'ya istek atilmaz.
+// Rapor adi/id'sinden deterministik uretilen dekoratif thumbnail + renk yardimcisi.
+// Deste kartlari da ayni renk paletini kullanir (thumbColors).
 
 const PALETTES = [
   ["#0ea5e9", "#6366f1"],
@@ -10,6 +10,8 @@ const PALETTES = [
   ["#ec4899", "#a855f7"],
   ["#0070f3", "#00c4f3"],
   ["#8b5cf6", "#ec4899"],
+  ["#f43f5e", "#f59e0b"],
+  ["#14b8a6", "#3b82f6"],
 ];
 
 function hashString(s) {
@@ -18,12 +20,21 @@ function hashString(s) {
   return Math.abs(h);
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
+export function thumbColors(seed) {
+  return PALETTES[hashString(seed || "rapor") % PALETTES.length];
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function thumbGradient(seed) {
+  const [c1, c2] = thumbColors(seed);
+  return `linear-gradient(135deg, ${c1}, ${c2})`;
+}
+
 export default function ReportThumb({ seed }) {
   const h = hashString(seed || "rapor");
   const [c1, c2] = PALETTES[h % PALETTES.length];
   const gid = `g-${h % 100000}`;
-
-  // 6 cubuklu mini grafik — yukseklikler seed'den turetilir.
   const bars = Array.from({ length: 6 }, (_, i) => 22 + ((h >> (i * 4)) % 46));
 
   return (
@@ -41,9 +52,7 @@ export default function ReportThumb({ seed }) {
         ))}
       </g>
       <g stroke="rgba(255,255,255,0.5)" strokeWidth="3" fill="none" strokeLinecap="round">
-        <polyline
-          points={bars.map((b, i) => `${51 + i * 42},${138 - b}`).join(" ")}
-        />
+        <polyline points={bars.map((b, i) => `${51 + i * 42},${138 - b}`).join(" ")} />
       </g>
       <rect width="320" height="180" fill="rgba(0,0,0,0.06)" />
     </svg>

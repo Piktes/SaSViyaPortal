@@ -3,7 +3,15 @@ import { Link } from "react-router-dom";
 import { useApp } from "../App.jsx";
 import TopBar from "../components/TopBar.jsx";
 import ReportThumb from "../components/ReportThumb.jsx";
-import { IconChart, IconFile, IconSupport, IconSend, IconSearch } from "../components/Icons.jsx";
+import CategoryDeck from "../components/CategoryDeck.jsx";
+import {
+  IconChart,
+  IconFile,
+  IconSupport,
+  IconSend,
+  IconSearch,
+  IconArrowLeft,
+} from "../components/Icons.jsx";
 import {
   listUserReports,
   exportReportPdf,
@@ -60,27 +68,47 @@ function norm(s) {
     .trim();
 }
 
-/* Sekme 1: yonetici tanimli, kategorili liste — canli gomulu goruntuleme. */
+/* Tek rapor karti (grid ve arama sonuclarinda ortak). */
+function ReportCard({ report, index, categoryName }) {
+  return (
+    <Link
+      to={`/report/${report.id}`}
+      className="report-card"
+      style={{ animationDelay: `${Math.min(index, 14) * 30}ms` }}
+    >
+      <div className="report-thumb">
+        <ReportThumb seed={report.name + report.id} />
+        {report.isNew && <span className="report-badge">Yeni</span>}
+      </div>
+      <div className="report-card-body">
+        <h3>{report.name}</h3>
+        {categoryName && <span className="report-cat-tag">{categoryName}</span>}
+      </div>
+    </Link>
+  );
+}
+
+/* Sekme 1: kategori desteleri (hover'da acilir) + kategori detayi + arama. */
 function LiveReportsTab() {
   const { config } = useApp();
   const [query, setQuery] = useState("");
+  const [openCat, setOpenCat] = useState(null); // acilan kategori (deste tiklaninca)
 
+  const categories = useMemo(() => config.categories || [], [config.categories]);
   const totalCount = config.reports.length;
 
-  // Aramaya gore kategorileri ve raporlari filtrele (isim uzerinden).
-  const filtered = useMemo(() => {
-    const categories = config.categories || [];
+  // Arama: tum raporlarda isimden (kategori etiketiyle birlikte).
+  const searchResults = useMemo(() => {
     const q = norm(query);
-    if (!q) return categories;
-    return categories
-      .map((cat) => ({
-        ...cat,
-        reports: cat.reports.filter((r) => norm(r.name).includes(q)),
-      }))
-      .filter((cat) => cat.reports.length > 0);
-  }, [config.categories, query]);
-
-  const matchCount = filtered.reduce((n, c) => n + c.reports.length, 0);
+    if (!q) return null;
+    const out = [];
+    for (const cat of categories) {
+      for (const r of cat.reports) {
+        if (norm(r.name).includes(q)) out.push({ report: r, catName: cat.name });
+      }
+    }
+    return out;
+  }, [categories, query]);
 
   if (totalCount === 0) {
     return (
@@ -90,6 +118,8 @@ function LiveReportsTab() {
     );
   }
 
+  const searching = query.trim() !== "";
+
   return (
     <>
       <div className="search-bar">
@@ -97,9 +127,11 @@ function LiveReportsTab() {
         <input
           type="text"
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpenCat(null);
+          }}
           placeholder={`Rapor ara… (${totalCount} rapor)`}
-          autoFocus
         />
         {query && (
           <button className="search-clear" onClick={() => setQuery("")} title="Temizle">
@@ -108,44 +140,54 @@ function LiveReportsTab() {
         )}
       </div>
 
-      {filtered.length === 0 ? (
-        <p className="state-note">"{query}" ile eşleşen rapor bulunamadı.</p>
-      ) : (
-        filtered.map((cat) => (
-          <section key={cat.name} className="report-section">
-            {cat.name && (
-              <h2 className="report-section-title">
-                <span>{cat.name}</span>
-                <span className="report-count">{cat.reports.length}</span>
-              </h2>
-            )}
+      {/* 1) Arama modu: eslesen raporlar duz grid */}
+      {searching ? (
+        searchResults.length === 0 ? (
+          <p className="state-note">"{query}" ile eşleşen rapor bulunamadı.</p>
+        ) : (
+          <>
             <div className="card-grid">
-              {cat.reports.map((report, i) => (
-                <Link
-                  key={report.id}
-                  to={`/report/${report.id}`}
-                  className="report-card"
-                  style={{ animationDelay: `${Math.min(i, 12) * 35}ms` }}
-                >
-                  <div className="report-thumb">
-                    <ReportThumb seed={report.name + report.id} />
-                    {report.isNew && <span className="report-badge">Yeni</span>}
-                  </div>
-                  <div className="report-card-body">
-                    <h3>{report.name}</h3>
-                  </div>
-                </Link>
+              {searchResults.map(({ report, catName }, i) => (
+                <ReportCard key={report.id} report={report} index={i} categoryName={catName} />
               ))}
             </div>
-          </section>
-        ))
+            <p className="muted small" style={{ marginTop: "1.25rem" }}>
+              {searchResults.length} rapor eşleşti.
+            </p>
+          </>
+        )
+      ) : openCat ? (
+        /* 2) Kategori detayi: secilen kategorinin tum raporlari */
+        <section className="report-section">
+          <div className="cat-detail-head">
+            <button className="btn btn-ghost" onClick={() => setOpenCat(null)}>
+              <IconArrowLeft size={15} /> Kategoriler
+            </button>
+            <h2 className="cat-detail-title">
+              {openCat.name}
+              <span className="report-count">{openCat.reports.length}</span>
+            </h2>
+          </div>
+          <div className="card-grid">
+            {openCat.reports.map((report, i) => (
+              <ReportCard key={report.id} report={report} index={i} />
+            ))}
+          </div>
+        </section>
+      ) : (
+        /* 3) Genel gorunum: kategori desteleri (hover'da acilir) */
+        <>
+          <div className="deck-grid">
+            {categories.map((cat, i) => (
+              <CategoryDeck key={cat.name} category={cat} index={i} onOpen={setOpenCat} />
+            ))}
+          </div>
+          <p className="muted small" style={{ marginTop: "1.5rem" }}>
+            Bir kategorinin üzerine gelin, kartlar açılsın; tıklayınca tüm raporları görün.
+            Ya da yukarıdan arayın.
+          </p>
+        </>
       )}
-
-      <p className="muted small" style={{ marginTop: "1.25rem" }}>
-        {query
-          ? `${matchCount} rapor eşleşti.`
-          : "Raporlar canlı olarak açılır; erişim yetkiniz olmayan raporlar görüntülenmez."}
-      </p>
     </>
   );
 }
